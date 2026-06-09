@@ -34,7 +34,11 @@ class QueueConfig:
     use_warmup: bool = False
 
     # Cost parameters
-    cost_per_vehicle_add: float = 150.0          # Cost to add one taxi
+    cost_add_fuel: float = 100.0          # c^+_f: fuel cost for dispatch trip
+    # The earning component (delta_e * c_v0 * sigma) comes from alpha2
+    # which already equals c_v0 * sigma (= 3.33 * surge)
+    # delta_e in minutes for the earning component:
+    delay_ext_minutes: float = 15.0       # delta_e: dispatch travel time (minutes)
     fuel_cost: float = 200.0                     # Fuel cost per removed/lost taxi
     cost_pax_lost: float = 600.0                 # Lost passenger demand cost
     time_to_city: float = 60.0                   # Expected time to go to city (multiplied by alpha2)

@@ -438,6 +438,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = QueueConfig()
+    # Old data (with old scaling)
+    # config = QueueConfig(dataset='old', data_scale_factor=3.0)
+
+    # # New data with group travel
+    # config = QueueConfig(pax_per_taxi=1.5)
     lambdas, mus_init = load_default_data(config)
     if args.n_intervals:
         lambdas = lambdas[:args.n_intervals]

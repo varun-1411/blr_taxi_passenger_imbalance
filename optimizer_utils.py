@@ -327,7 +327,9 @@ def compute_carryover_cost(mu_add, mu_remove, alpha2, config):
     dispatch_cost = 0.0
     if pad_mus > 0:
         for j in range(max(0, n - pad_mus), n):
-            dispatch_cost += mu_add[j] * dt * config.cost_per_vehicle_add
+            a2 = float(alpha2[j]) if j < len(alpha2) else float(alpha2[-1])
+            cost_add = config.cost_add_fuel + config.delay_ext_minutes * a2
+            dispatch_cost += mu_add[j] * dt * cost_add
 
     # Removal cost: mu_remove in last pad_mu0 intervals
     removal_cost = 0.0
@@ -406,6 +408,7 @@ def compute_objective(pi0, eff_nr, lambda_vals, alpha1_vals, alpha2_vals,
         a1, a2 = alpha1_vals[j], alpha2_vals[j]
         ctl = config.fuel_cost + config.time_to_city * a2
         dt = config.interval_length
+        cost_add = config.cost_add_fuel + config.delay_ext_minutes * a2
 
         Q, _, _ = build_Q_non_erlang_vec(
             K_S=config.K_S, K_P=config.K_P, M=config.M,
@@ -415,7 +418,7 @@ def compute_objective(pi0, eff_nr, lambda_vals, alpha1_vals, alpha2_vals,
         Ap, Ar, At, Abp, Abt, pi_T = unif_step(pi, Q, W, config.interval_length)
 
         obj = obj + (a1 * Ap + a2 * (At + Ar)
-                     + mu_add[j] * dt * config.cost_per_vehicle_add
+                     + mu_add[j] * dt * cost_add
                      + mu_remove[j] * dt * ctl
                      + config.cost_pax_lost * pax * Abp
                      + ctl * cars * Abt)
@@ -450,7 +453,8 @@ def compute_objective_detailed(pi0, eff_nr, lambda_vals, alpha1_vals, alpha2_val
         Ap, Ar, At, Abp, Abt, pi_T = unif_step(pi, Q, W, config.interval_length)
 
         cp = a1 * Ap; ct = a2 * (At + Ar)
-        ca = mu_add[j] * dt * config.cost_per_vehicle_add
+        cost_add = config.cost_add_fuel + config.delay_ext_minutes * a2
+        ca = mu_add[j] * dt * cost_add
         cr = mu_remove[j] * dt * ctl
         cpl = config.cost_pax_lost * pax * Abp
         ctl_cost = ctl * cars * Abt
@@ -552,7 +556,8 @@ def evaluate_per_block(mu_add, mu_remove, lambdas, mus_init,
 
             cp = float(a1) * Ap.item()
             ct = float(a2) * (At.item() + Ar.item())
-            ca = float(mu_add_t[j]) * dt * config.cost_per_vehicle_add
+            cost_add = config.cost_add_fuel + config.delay_ext_minutes * float(a2)
+            ca = float(mu_add_t[j]) * dt * cost_add
             cr = float(mu_remove_t[j]) * dt * ctl
             cpl = config.cost_pax_lost * float(pax) * Abp.item()
             ctl_c = ctl * float(cars) * Abt.item()
@@ -622,7 +627,8 @@ def evaluate_full_day(mu_add, mu_remove, lambdas, mus_init,
         abp = Abp.item(); abt = Abt.item()
 
         cp = a1 * ap; ct = a2 * (at + ar)
-        ca = mu_add[i] * dt * config.cost_per_vehicle_add
+        cost_add = config.cost_add_fuel + config.delay_ext_minutes * a2
+        ca = mu_add[i] * dt * cost_add
         cr = mu_remove[i] * dt * ctl
         cpl = config.cost_pax_lost * pax * abp
         ctl_c = ctl * cars * abt
