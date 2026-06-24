@@ -173,12 +173,13 @@ def run_bo(lambdas, mus_init, alpha1, alpha2, config, out_dir,
     from optimizers.bayesian_optimization import run_bayesopt
     num_iter = max_iter or config.bo_num_iter
     print(f"    Bayesian Opt (n={num_iter})...", end=' ', flush=True)
-    lt = torch.tensor(lambdas, dtype=torch.float32)
-    mt = torch.tensor(mus_init, dtype=torch.float32)
-    a1t = torch.tensor(alpha1, dtype=torch.float32)
-    a2t = torch.tensor(alpha2, dtype=torch.float32)
-    ia = torch.tensor(init_add, dtype=torch.float32) if init_add is not None else None
-    ir = torch.tensor(init_rem, dtype=torch.float32) if init_rem is not None else None
+    dtype = config.dtype_torch
+    lt = torch.tensor(lambdas, dtype=dtype)
+    mt = torch.tensor(mus_init, dtype=dtype)
+    a1t = torch.tensor(alpha1, dtype=dtype)
+    a2t = torch.tensor(alpha2, dtype=dtype)
+    ia = torch.tensor(init_add, dtype=dtype) if init_add is not None else None
+    ir = torch.tensor(init_rem, dtype=dtype) if init_rem is not None else None
     t0 = time.time()
     r = run_bayesopt(lt, mt, a1t, a2t, config,
         init_mu_add=ia, init_mu_remove=ir,

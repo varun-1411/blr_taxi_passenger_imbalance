@@ -192,10 +192,11 @@ if __name__ == '__main__':
     lambdas, mus_init = load_default_data(config)
     alpha1, alpha2 = config.get_alpha_arrays()
 
-    lambdas_t = torch.tensor(lambdas, dtype=torch.float32)
-    mus_init_t = torch.tensor(mus_init, dtype=torch.float32)
-    alpha1_t = torch.tensor(alpha1, dtype=torch.float32)
-    alpha2_t = torch.tensor(alpha2, dtype=torch.float32)
+    dtype = config.dtype_torch
+    lambdas_t = torch.tensor(lambdas, dtype=dtype)
+    mus_init_t = torch.tensor(mus_init, dtype=dtype)
+    alpha1_t = torch.tensor(alpha1, dtype=dtype)
+    alpha2_t = torch.tensor(alpha2, dtype=dtype)
 
     results = run_bayesopt(
         lambdas_t, mus_init_t, alpha1_t, alpha2_t, config,

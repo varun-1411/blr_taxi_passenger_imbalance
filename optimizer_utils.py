@@ -507,12 +507,14 @@ def propagate_one_day(pi0, eff_nr, lambda_vals, config, device, dtype):
 def evaluate_per_block(mu_add, mu_remove, lambdas, mus_init,
                        alpha1, alpha2, config, commit_size,
                        pi0=None, carryover=None,
-                       device='cpu', dtype=torch.float32):
+                       device='cpu', dtype=None):
     """
     Evaluate controls block-by-block on the transient model.
 
     Returns (block_costs, block_details, total_obj).
     """
+    if dtype is None:
+        dtype = config.dtype_torch
     n = len(lambdas)
     pad_mu0, pad_mus = config.get_delay_blocks()
 
@@ -584,12 +586,14 @@ def evaluate_per_block(mu_add, mu_remove, lambdas, mus_init,
 def evaluate_full_day(mu_add, mu_remove, lambdas, mus_init,
                       alpha1, alpha2, config,
                       pi0=None, carryover=None,
-                      device='cpu', dtype=torch.float32):
+                      device='cpu', dtype=None):
     """
     Evaluate controls over full day with zero-pad delays + optional carryover.
 
     Returns (total_obj, details_dict, queue_time_series).
     """
+    if dtype is None:
+        dtype = config.dtype_torch
     n = len(lambdas)
     pad_mu0, pad_mus = config.get_delay_blocks()
 
@@ -660,7 +664,7 @@ def evaluate_full_day(mu_add, mu_remove, lambdas, mus_init,
 def optimize_full_day(lambdas, mus_init, alpha1, alpha2, config,
                       max_iter=300, lr=1.0, epsilon=1e-1, seed=42,
                       pi0=None, cyclic=False, carryover=None,
-                      device='cpu', dtype=torch.float32):
+                      device='cpu', dtype=None):
     """
     Optimize mu_add, mu_remove over all intervals jointly.
 
@@ -677,6 +681,8 @@ def optimize_full_day(lambdas, mus_init, alpha1, alpha2, config,
     -------
     dict with mu_add, mu_remove, objective, eff_nr, details, history
     """
+    if dtype is None:
+        dtype = config.dtype_torch
     _build_eff = build_eff_nr_cyclic if cyclic else build_eff_nr_zero_pad
     # Carryover only applies with zero-pad (cyclic wraps automatically)
     _carryover = carryover if not cyclic else None
@@ -747,8 +753,10 @@ def optimize_full_day(lambdas, mus_init, alpha1, alpha2, config,
 
 @torch.no_grad()
 def run_do_nothing(lambdas, mus_init, alpha1, alpha2, config,
-                   pi0=None, device='cpu', dtype=torch.float32):
+                   pi0=None, device='cpu', dtype=None):
     """Evaluate zero controls (no intervention)."""
+    if dtype is None:
+        dtype = config.dtype_torch
     n = len(lambdas)
     pad_mu0, pad_mus = config.get_delay_blocks()
 
@@ -780,7 +788,7 @@ def optimize_greedy(lambdas, mus_init, alpha1, alpha2, config,
                     commit_size=36, buffer_size=None,
                     max_iter=200, lr=1.0, epsilon=1e-1, seed=42,
                     sample_state=False, pi0=None, carryover=None,
-                    device='cpu', dtype=torch.float32, verbose=False):
+                    device='cpu', dtype=None, verbose=False):
     """
     Greedy rolling-horizon Adam optimization.
 
@@ -799,6 +807,8 @@ def optimize_greedy(lambdas, mus_init, alpha1, alpha2, config,
     """
     torch.manual_seed(seed)
     rng = np.random.RandomState(seed)
+    if dtype is None:
+        dtype = config.dtype_torch
 
     n = len(lambdas)
     pad_mu0, pad_mus = config.get_delay_blocks()
@@ -918,7 +928,7 @@ def optimize_mpc(lambdas, mus_init, alpha1, alpha2, config,
                  max_iter=500, lr=1.0, epsilon=1e-1, seed=42,
                  sample_state=False, pi0=None, carryover=None,
                  warm_start=None,
-                 device='cpu', dtype=torch.float32, verbose=False):
+                 device='cpu', dtype=None, verbose=False):
     """
     Receding-horizon MPC Adam optimization.
 
@@ -938,6 +948,8 @@ def optimize_mpc(lambdas, mus_init, alpha1, alpha2, config,
     """
     torch.manual_seed(seed)
     rng = np.random.RandomState(seed)
+    if dtype is None:
+        dtype = config.dtype_torch
 
     n = len(lambdas)
     pad_mu0, pad_mus = config.get_delay_blocks()

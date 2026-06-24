@@ -43,8 +43,10 @@ def run_experiment(lambdas, mus_init, alpha1, alpha2, config,
                    max_iter=500, lr=1.0, epsilon=1e-1,
                    base_seed=42, sample_state=True,
                    pi0=None, carryover=None,
-                   device='cpu', dtype=torch.float32):
+                   device='cpu', dtype=None):
     """Run full-day (once) + greedy/MPC (N times with sampling)."""
+    if dtype is None:
+        dtype = config.dtype_torch
     results = {}
     co_cost = 0.0
 
@@ -363,7 +365,7 @@ if __name__ == '__main__':
     lambdas, mus_init = load_default_data(config)
     if args.n_intervals is not None:
         lambdas = lambdas[:args.n_intervals]
-        mus_init = mus_init[:args.n_intervals]
+        mus_init = mus_init[config.dtype_torchvals]
     alpha1, alpha2 = config.get_alpha_arrays(size=len(lambdas))
     device = 'cpu'; dtype = torch.float32
 

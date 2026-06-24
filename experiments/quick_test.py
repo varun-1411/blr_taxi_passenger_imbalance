@@ -87,9 +87,11 @@ setup_plot_style()
 
 def optimize_full_day_verbose(lambdas, mus_init, alpha1, alpha2, config,
                               max_iter=300, lr=1.0, epsilon=1e-1, seed=42,
-                              pi0=None, device='cpu', dtype=torch.float32,
+                              pi0=None, device='cpu', dtype=None,
                               print_every=10):
     """Full-day Adam with per-iteration verbose output."""
+    if dtype is None:
+        dtype = config.dtype_torch
     torch.manual_seed(seed)
     rng = np.random.RandomState(seed)
     n = len(lambdas)
@@ -173,9 +175,11 @@ def optimize_greedy_verbose(lambdas, mus_init, alpha1, alpha2, config,
                             commit_size=5, buffer_size=None,
                             max_iter=200, lr=1.0, epsilon=1e-1, seed=42,
                             sample_state=False, pi0=None,
-                            device='cpu', dtype=torch.float32,
+                            device='cpu', dtype=None,
                             print_every=10):
     """Greedy with verbose per-window, per-iteration output."""
+    if dtype is None:
+        dtype = config.dtype_torch
     torch.manual_seed(seed)
     rng = np.random.RandomState(seed)
     n = len(lambdas)
@@ -296,9 +300,11 @@ def optimize_mpc_verbose(lambdas, mus_init, alpha1, alpha2, config,
                          commit_size=5,
                          max_iter=300, lr=1.0, epsilon=1e-1, seed=42,
                          sample_state=False, pi0=None,
-                         device='cpu', dtype=torch.float32,
+                         device='cpu', dtype=None,
                          print_every=10):
     """MPC with verbose per-window, per-iteration output."""
+    if dtype is None:
+        dtype = config.dtype_torch
     torch.manual_seed(seed)
     rng = np.random.RandomState(seed)
     n = len(lambdas)

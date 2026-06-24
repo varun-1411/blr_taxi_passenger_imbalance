@@ -37,7 +37,7 @@ def extract_sparse_diagonal(Q_sparse):
 # ---------------------------------------------------------------------------
 
 def build_Q_non_erlang_vec(K_S=1, K_P=1, M=1, lam=1.0, alpha=1.0, tau=1.0,
-                           device=None, dtype=torch.float32):
+                           device=None, dtype=None):
     """Build the QBD generator matrix Q as a sparse COO tensor.
 
     Parameters
@@ -68,6 +68,8 @@ def build_Q_non_erlang_vec(K_S=1, K_P=1, M=1, lam=1.0, alpha=1.0, tau=1.0,
     """
     if device is None:
         device = torch.device("cpu")
+    if dtype is None:
+        dtype = torch.float32
     K_S = int(K_S); K_P = int(K_P); M = int(M)
     S = K_S + 1
     Nn = K_P + M + 1
@@ -199,7 +201,7 @@ def build_P_from_Q(Q):
 # State weight vectors (torch)
 # ---------------------------------------------------------------------------
 
-def make_state_vectors(K_S, K_P, M, device=None, dtype=torch.float32):
+def make_state_vectors(K_S, K_P, M, device=None, dtype=None):
     """Compute per-state weight vectors without iterating over states.
 
     Returns a dict with keys: s_vec, n_vec, w_pass, w_pick, w_stage,
@@ -207,6 +209,8 @@ def make_state_vectors(K_S, K_P, M, device=None, dtype=torch.float32):
     """
     if device is None:
         device = torch.device("cpu")
+    if dtype is None:
+        dtype = torch.float32
     Nn = K_P + M + 1
     N = (K_S + 1) * Nn
     idxs = torch.arange(N, device=device)

@@ -172,10 +172,11 @@ def run_random_search(
     """
     os.makedirs(out_dir, exist_ok=True)
 
-    lambdas_t = torch.tensor(lambdas, dtype=torch.float32)
-    mus_init_t = torch.tensor(mus_init, dtype=torch.float32)
-    alpha1_t = torch.tensor(alpha1, dtype=torch.float32)
-    alpha2_t = torch.tensor(alpha2, dtype=torch.float32)
+    dtype = config.dtype_torch
+    lambdas_t = torch.tensor(lambdas, dtype=dtype)
+    mus_init_t = torch.tensor(mus_init, dtype=dtype)
+    alpha1_t = torch.tensor(alpha1, dtype=dtype)
+    alpha2_t = torch.tensor(alpha2, dtype=dtype)
 
     def objective_fn(x):
         d = x.numel() // 2
@@ -185,7 +186,7 @@ def run_random_search(
             mu_0=mus_init_t, lambda_vals=lambdas_t,
             mu_vals=mu_add, mu_removed=mu_remove,
             alpha1=alpha1_t, alpha2=alpha2_t,
-            config=config, device='cpu', dtype=torch.float32
+            config=config, device='cpu', dtype=dtype
         )
         return obj.item()
 

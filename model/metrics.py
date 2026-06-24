@@ -69,13 +69,15 @@ def run_simulation(
     """
     if device is None:
         device = torch.device("cpu")
+    
+    dtype = config.dtype_torch
 
-    lambdas = torch.as_tensor(lambdas, dtype=torch.float32, device=device)
-    mu_0 = torch.as_tensor(mu_0, dtype=torch.float32, device=device)
-    alpha1 = torch.as_tensor(alpha1, dtype=torch.float32, device=device)
-    alpha2 = torch.as_tensor(alpha2, dtype=torch.float32, device=device)
-    mus_add = torch.as_tensor(mus_add, dtype=torch.float32, device=device)
-    mus_removed = torch.as_tensor(mus_removed, dtype=torch.float32, device=device)
+    lambdas = torch.as_tensor(lambdas, dtype=dtype, device=device)
+    mu_0 = torch.as_tensor(mu_0, dtype=dtype, device=device)
+    alpha1 = torch.as_tensor(alpha1, dtype=dtype, device=device)
+    alpha2 = torch.as_tensor(alpha2, dtype=dtype, device=device)
+    mus_add = torch.as_tensor(mus_add, dtype=dtype, device=device)
+    mus_removed = torch.as_tensor(mus_removed, dtype=dtype, device=device)
 
     interval_length = config.interval_length
     K_S, K_P, M = config.K_S, config.K_P, config.M
@@ -84,11 +86,11 @@ def run_simulation(
     mus_add_t = mus_add  # already tensor from above
     mus_removed_t = mus_removed
     effective_mu, warmup_eff_nr, n_warmup, _ = _apply_delays(
-        mu_0, mus_add_t, mus_removed_t, config, device, torch.float32
+        mu_0, mus_add_t, mus_removed_t, config, device, dtype
     )
 
     # State vectors
-    sv = make_state_vectors(K_S, K_P, M, device=device)
+    sv = make_state_vectors(K_S, K_P, M, device=device, dtype=dtype)
     s_vec, n_vec = sv['s_vec'], sv['n_vec']
     w_pass, w_pick, w_stage = sv['w_pass'], sv['w_pick'], sv['w_stage']
     w_block_pax, w_block_taxi = sv['w_block_pax'], sv['w_block_taxi']
@@ -96,7 +98,7 @@ def run_simulation(
     # Initial distribution
     Nn = K_P + M + 1
     N_states = (K_S + 1) * Nn
-    pi0 = torch.zeros(N_states, dtype=torch.float32, device=device)
+    pi0 = torch.zeros(N_states, dtype=dtype, device=device)
     pi0[M] = 1.0  # state (s=0, n=0) has index M
 
     # Warmup phase: propagate pi through end-of-day intervals, no cost
@@ -105,7 +107,7 @@ def run_simulation(
         pi0 = _run_warmup(
             pi0, warmup_eff_nr, warmup_lambda,
             w_pass, w_stage, w_pick, w_block_pax, w_block_taxi,
-            K_S, K_P, M, config.tau, interval_length, device, torch.float32
+            K_S, K_P, M, config.tau, interval_length, device, dtype
         )
 
     # Accumulators
@@ -410,7 +412,7 @@ def _run_warmup(pi0, warmup_eff_nr, warmup_lambda,
 def compute_total_objective_uniformization(
     mu_0, lambda_vals, mu_vals, mu_removed,
     alpha1, alpha2, config,
-    device=None, dtype=torch.float32,
+    device=None, dtype=None,
     checkpoint_every=None,
     pi0_init=None,
     eff_nr_base=None,
@@ -449,6 +451,8 @@ def compute_total_objective_uniformization(
 
     if device is None:
         device = torch.device("cpu")
+    if dtype is None:
+        dtype = config.dtype_torch
 
     lambda_vals = lambda_vals.to(device=device, dtype=dtype)
     mu_0 = mu_0.to(device=device, dtype=dtype)

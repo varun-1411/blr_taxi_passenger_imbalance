@@ -97,6 +97,10 @@ class QueueConfig:
     # 'old' or 'legacy' → Datasets/Total_Passengers_Arrival.csv + departures.csv
     dataset: str = 'new'
 
+    # Tensor dtype for PyTorch operations
+    # 'float32' or 'float64' (32-bit vs 64-bit floating point precision)
+    dtype_str: str = 'float32'
+
     @property
     def n_intervals(self) -> int:
         return int(self.time_horizon / self.interval_length)
@@ -134,3 +138,13 @@ class QueueConfig:
         """
         pad_mu0, pad_mus = self.get_delay_blocks()
         return 2 * max(pad_mu0, pad_mus)
+
+    @property
+    def dtype_torch(self):
+        """Get PyTorch dtype from dtype_str configuration."""
+        import torch
+        if self.dtype_str == 'float64':
+            return torch.float64
+        else:
+            return torch.float32
+
