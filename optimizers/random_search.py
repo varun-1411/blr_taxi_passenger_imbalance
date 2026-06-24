@@ -92,7 +92,7 @@ def random_search_parallel(
         bs = min(batch_size, n_samples - batch_start)
         X = rng.uniform(lower, upper, size=(bs, dim))
 
-        results = Parallel(n_jobs=N_JOBS, backend="loky")(
+        results = Parallel(n_jobs=N_JOBS, backend="threading")(
             delayed(eval_one)(x) for x in X
         )
 

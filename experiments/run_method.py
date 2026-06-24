@@ -35,7 +35,7 @@ from config import QueueConfig
 from data import load_default_data
 from optimizer_utils import (
     optimize_full_day, optimize_greedy, optimize_mpc,
-    run_do_nothing, load_initial_state,
+    run_do_nothing, load_initial_state, evaluate_full_day,
 )
 
 
@@ -81,7 +81,7 @@ def write_or_check_run_config(out_dir, cfg):
             json.dump(cfg, f, indent=2, default=_json_default)
 
 
-def save_run(subdir, r, elapsed, seed, method):
+def save_run(subdir, r, elapsed, seed, method, extra=None):
     """Persist one run's controls + meta (objective, time, host)."""
     os.makedirs(subdir, exist_ok=True)
     np.save(os.path.join(subdir, 'mu_add.npy'), np.asarray(r['mu_add']))
@@ -96,6 +96,8 @@ def save_run(subdir, r, elapsed, seed, method):
         'platform': platform.platform(),
         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
     }
+    if extra:
+        meta.update(extra)
     with open(os.path.join(subdir, 'meta.json'), 'w') as f:
         json.dump(meta, f, indent=2, default=_json_default)
     return meta
@@ -119,12 +121,17 @@ if __name__ == '__main__':
                    help='Greedy lookahead buffer (default: pad_mus)')
     p.add_argument('--max_iter', type=int, default=500)
     p.add_argument('--lr', type=float, default=1.0)
-    p.add_argument('--epsilon', type=float, default=1e-1)
+    p.add_argument('--epsilon', type=float, default=10)
     p.add_argument('--sample_state', action='store_true')
     p.add_argument('--pi0', type=str, default=None,
                    help='Path to pi0.npy (distribution only; no carryover)')
     p.add_argument('--initial_state_dir', type=str, default=None,
                    help='Initial-state dir (loads pi0 + carryover + carryover_cost)')
+    p.add_argument('--import_full_day_from', type=str, default=None,
+                   help='For --method full_day: load mu_add.npy/mu_remove.npy from this '
+                        'dir (e.g. results/model_analysis/adam_delay) and RE-EVALUATE them '
+                        'under the current pi0/carryover instead of re-optimizing. Valid only '
+                        'when those controls were optimized from the same initial condition.')
     p.add_argument('--out_dir', type=str, default='results/comparison')
     args = p.parse_args()
 
@@ -178,12 +185,35 @@ if __name__ == '__main__':
         print(f"  do_nothing: obj={r['objective']:.2f} ({dt:.1f}s)")
 
     elif args.method == 'full_day':
-        t0 = time.time()
-        r = optimize_full_day(lambdas, mus_init, alpha1, alpha2, config,
-                              seed=args.seeds[0], **common)
-        dt = time.time() - t0
-        save_run(os.path.join(args.out_dir, 'full_day'), r, dt, args.seeds[0], 'full_day')
-        print(f"  full_day: obj={r['objective']:.2f} ({dt:.1f}s)")
+        if args.import_full_day_from:
+            src = args.import_full_day_from
+            mu_add = np.load(os.path.join(src, 'mu_add.npy'))
+            mu_remove = np.load(os.path.join(src, 'mu_remove.npy'))
+            if len(mu_add) != len(lambdas):
+                print(f"  WARNING: imported controls length {len(mu_add)} != "
+                      f"n_intervals {len(lambdas)}; slicing to match.")
+                mu_add = mu_add[:len(lambdas)]
+                mu_remove = mu_remove[:len(lambdas)]
+            # Re-score through evaluate_full_day — the SAME path greedy/MPC use —
+            # under the current pi0/carryover, so the benchmark is apples-to-apples.
+            t0 = time.time()
+            total_obj, _, _ = evaluate_full_day(
+                mu_add, mu_remove, lambdas, mus_init, alpha1, alpha2, config,
+                pi0=pi0, carryover=carryover, device=device, dtype=dtype)
+            dt = time.time() - t0
+            r = {'mu_add': mu_add, 'mu_remove': mu_remove, 'objective': float(total_obj)}
+            save_run(os.path.join(args.out_dir, 'full_day'), r, dt, None, 'full_day',
+                     extra={'imported_from': src,
+                            'note': 'controls imported and re-evaluated; '
+                                    'time_seconds is eval-only, not optimization time'})
+            print(f"  full_day (imported from {src}): obj={total_obj:.2f}  [re-eval {dt:.1f}s]")
+        else:
+            t0 = time.time()
+            r = optimize_full_day(lambdas, mus_init, alpha1, alpha2, config,
+                                  seed=args.seeds[0], **common)
+            dt = time.time() - t0
+            save_run(os.path.join(args.out_dir, 'full_day'), r, dt, args.seeds[0], 'full_day')
+            print(f"  full_day: obj={r['objective']:.2f} ({dt:.1f}s)")
 
     else:  # greedy or mpc — one sample dir per seed, each timed
         for seed in args.seeds:

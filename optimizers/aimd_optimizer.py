@@ -107,7 +107,7 @@ def aimd_coordinatewise_parallel(
                 x_new[d:] = torch.clamp(x_new[d:], mu_remove_lb, mu_remove_ub)
                 candidates_dec.append(x_new)
 
-            values_dec = Parallel(n_jobs=N_JOBS, backend="loky")(
+            values_dec = Parallel(n_jobs=N_JOBS, backend="threading")(
                 delayed(objective_fn)(c) for c in candidates_dec
             )
 
