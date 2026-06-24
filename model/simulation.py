@@ -22,6 +22,7 @@ def shift_with_wrap(x, k):
 
 def rk4_step_sparse_torch(pi, Q, delta_t):
     """Single RK4 step for d pi/dt = pi Q using sparse Q (row-vector convention)."""
+    Q = Q.to(device=pi.device, dtype=pi.dtype)
     k1 = torch.sparse.mm(pi.unsqueeze(0), Q).squeeze(0)
     k2 = torch.sparse.mm((pi + 0.5 * delta_t * k1).unsqueeze(0), Q).squeeze(0)
     k3 = torch.sparse.mm((pi + 0.5 * delta_t * k2).unsqueeze(0), Q).squeeze(0)
@@ -64,6 +65,7 @@ def uniformized_block_with_piT(pi0, Q, w_pass, w_stage, w_pick,
     dtype = pi0.dtype
     from model.generator import build_P_from_Q
     P, gamma = build_P_from_Q(Q)
+    P = P.to(device=device, dtype=dtype)
     lam = gamma * T
     K = torch.ceil(lam + 5.0 * torch.sqrt(lam) + 1.0).to(torch.int)
     k_idx = torch.arange(K + 1, device=device, dtype=dtype)

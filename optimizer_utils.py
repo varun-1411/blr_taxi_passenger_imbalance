@@ -137,7 +137,7 @@ def build_window_eff_nr(ell_start, W_opt, mu_add_w, mu_remove_w,
 def unif_step(pi, Q, W, interval_length):
     """Single uniformization step: returns (A_pass, A_resv, A_taxi, A_block_pax, A_block_taxi, pi_T)."""
     P, gamma = build_P_from_Q(Q)
-    P = P.coalesce()
+    P = P.to(device=pi.device, dtype=pi.dtype).coalesce()
     return uniformized_with_checkpoint_blocks(
         pi, P.indices()[0], P.indices()[1], P.values(), gamma, W,
         interval_length, max_K_cap=30000, tol_tail=1e-12, block_size=60)

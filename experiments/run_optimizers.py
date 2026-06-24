@@ -50,6 +50,13 @@ def run_experiment(lambdas, mus_init, alpha1, alpha2, config,
     results = {}
     co_cost = 0.0
 
+
+# Do-nothing baseline
+    dn = run_do_nothing(lambdas, mus_init, alpha1, alpha2, config,
+                        pi0=pi0, device=device, dtype=dtype)
+    print(f"  Do-nothing: {dn['objective']:.2f}")
+    results['do_nothing'] = dn
+
     # Full-day: single deterministic run
     print(f"\n{'─'*50}")
     print(f"Full-Day Adam (single run)")
@@ -63,11 +70,7 @@ def run_experiment(lambdas, mus_init, alpha1, alpha2, config,
     print(f"  Objective: {fd['objective']:.2f} ({time.time()-t0:.1f}s)")
     results['full_day'] = fd
 
-    # Do-nothing baseline
-    dn = run_do_nothing(lambdas, mus_init, alpha1, alpha2, config,
-                        pi0=pi0, device=device, dtype=dtype)
-    print(f"  Do-nothing: {dn['objective']:.2f}")
-    results['do_nothing'] = dn
+    
 
     # Greedy: N runs
     print(f"\n{'─'*50}")
@@ -365,7 +368,7 @@ if __name__ == '__main__':
     lambdas, mus_init = load_default_data(config)
     if args.n_intervals is not None:
         lambdas = lambdas[:args.n_intervals]
-        mus_init = mus_init[config.dtype_torchvals]
+        mus_init = mus_init[:args.n_intervals]
     alpha1, alpha2 = config.get_alpha_arrays(size=len(lambdas))
     device = 'cpu'; dtype = torch.float32
 

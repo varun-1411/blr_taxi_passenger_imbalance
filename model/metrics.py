@@ -291,7 +291,7 @@ def _run_interval_block(pi0, eff_nr_block, lambda_block, alpha1_block, alpha2_bl
         )
 
         P, gamma = build_P_from_Q(Q)
-        P = P.coalesce()
+        P = P.to(device=device, dtype=dtype).coalesce()
         P_rows = P.indices()[0]
         P_cols = P.indices()[1]
         P_vals_t = P.values()
@@ -396,7 +396,7 @@ def _run_warmup(pi0, warmup_eff_nr, warmup_lambda,
             device=device, dtype=dtype
         )
         P, gamma = build_P_from_Q(Q)
-        P = P.coalesce()
+        P = P.to(device=device, dtype=dtype).coalesce()
         P_rows, P_cols = P.indices()[0], P.indices()[1]
         P_vals_t = P.values()
         W = torch.stack([w_pass, w_stage, w_pick, w_block_pax, w_block_taxi], dim=0)
@@ -521,7 +521,7 @@ def compute_total_objective_uniformization(
             )
 
             P, gamma = build_P_from_Q(Q)
-            P = P.coalesce()
+            P = P.to(device=device, dtype=dtype).coalesce()
             P_rows = P.indices()[0]
             P_cols = P.indices()[1]
             P_vals_t = P.values()
