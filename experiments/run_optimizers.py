@@ -47,10 +47,6 @@ def run_experiment(lambdas, mus_init, alpha1, alpha2, config,
     """Run full-day (once) + greedy/MPC (N times with sampling)."""
     results = {}
     co_cost = 0.0
-    if carryover is not None:
-        co_cost = float(np.load(os.path.join(
-            os.path.dirname(carryover.get('_dir', '')), 'carryover_cost.npy'))[0]) \
-            if '_dir' in carryover else 0.0
 
     # Full-day: single deterministic run
     print(f"\n{'─'*50}")

@@ -38,7 +38,7 @@ class QueueConfig:
     # The earning component (delta_e * c_v0 * sigma) comes from alpha2
     # which already equals c_v0 * sigma (= 3.33 * surge)
     # delta_e in minutes for the earning component:
-    delay_ext_minutes: float = 15.0       # delta_e: dispatch travel time (minutes)
+    delay_ext_minutes: float = 20.0       # delta_e: dispatch travel time (minutes)
     fuel_cost: float = 200.0                     # Fuel cost per removed/lost taxi
     cost_pax_lost: float = 600.0                 # Lost passenger demand cost
     time_to_city: float = 60.0                   # Expected time to go to city (multiplied by alpha2)
@@ -54,29 +54,34 @@ class QueueConfig:
     # Optimizer defaults
     adam_max_iter: int = 500            # Max iterations for Adam
     adam_lr: float = 1.0                # Adam learning rate
-    adam_epsilon: float = 1e-1          # Adam convergence epsilon
+    adam_epsilon: float = 10         # Adam convergence epsilon
     aimd_max_iter: int = 10             # Max iterations for AIMD
     aimd_inc: float = 1.0               # AIMD additive increase
     aimd_dec: float = 0.5               # AIMD multiplicative decrease
-    aimd_tol: float = 1e-2              # AIMD convergence tolerance
-    rs_n_samples: int = 300             # Random search samples
+    aimd_tol: float = 10              # AIMD convergence tolerance
+    rs_n_samples: int = 500             # Random search samples
     rs_batch_size: int = 8              # Random search batch size
     rs_n_refine: int = 50               # Random search refinement samples
-    bo_num_iter: int = 200               # Bayesian optimization iterations
-    optimizer_max_time: float = 86400    # Max time per optimizer (seconds), None = no limit
+    bo_num_iter: int = 500               # Bayesian optimization iterations
+    optimizer_max_time: float = 43200    # Max time per optimizer (seconds), None = no limit
     optimizer_seed: int = 42            # Random seed for stochastic optimizers
 
     # Default cost weights
     alpha1_default: float = 7.83    # Passenger wait weight
 
     # Alpha2 base values (hourly, 24 values)
-    alpha2_base: np.ndarray = field(default_factory=lambda: np.array([
-        1.28415599, 1.32769306, 1.2896413,  1.03098849, 1.02762594, 1.01491427,
-        1.0,        1.02391873, 1.01624123, 1.00883367, 1.02758096, 1.02433379,
-        1.0244253,  1.0318179,  1.02179094, 1.01794946, 1.02870368, 1.03881025,
-        1.03257338, 1.02241081, 1.0197055,  1.00863927, 1.21394116, 1.23236079
-    ]) * 3.33)
+    # alpha2_base: np.ndarray = field(default_factory=lambda: np.array([
+    #     1.28415599, 1.32769306, 1.2896413,  1.03098849, 1.02762594, 1.01491427,
+    #     1.0,        1.02391873, 1.01624123, 1.00883367, 1.02758096, 1.02433379,
+    #     1.0244253,  1.0318179,  1.02179094, 1.01794946, 1.02870368, 1.03881025,
+    #     1.03257338, 1.02241081, 1.0197055,  1.00863927, 1.21394116, 1.23236079
+    # ]) * 3.33)
 
+    alpha2_base: np.ndarray = field(default_factory=lambda: np.where(
+        (np.arange(24) >= 23) | (np.arange(24) < 5),  # night: 11pm–5am
+        1.20,   # +20% night surcharge
+        1.00,   # daytime: no surcharge
+    ) * 3.33)
     # Data scaling
     data_scale_factor: float = 1.0  # Divide raw rates by this (1.0 = no scaling)
 
@@ -116,7 +121,7 @@ class QueueConfig:
     def get_delay_blocks(self):
         """Compute delay block counts for shift_with_wrap."""
         pad_mu0 = int(np.ceil(self.delay_non_reserved / self.interval_length))
-        pad_mus = int(np.ceil((self.delay_non_reserved + self.delay_extra) / self.interval_length))
+        pad_mus = int(np.ceil(self.delay_ext_minutes / self.interval_length))
         return pad_mu0, pad_mus
 
     @property

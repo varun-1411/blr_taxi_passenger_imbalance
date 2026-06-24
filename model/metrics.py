@@ -219,9 +219,10 @@ def run_simulation(
         term_taxi += a2 * A_taxi
         term_resv += a2 * A_resv
         cost_taxi_lost = config.fuel_cost + config.time_to_city * a2
+        cost_add = config.cost_add_fuel + config.delay_ext_minutes * a2
         term_pax_lost += config.cost_pax_lost * lam * A_block_pax
         term_taxi_lost += cost_taxi_lost * mu_nr * A_block_taxi
-        term_add_cost += mus_add[i] * config.interval_length * config.cost_per_vehicle_add
+        term_add_cost += mus_add[i] * config.interval_length * cost_add
         term_remove_cost += mus_removed[i] * config.interval_length * cost_taxi_lost
 
         pi0 = pi_T.clone()
@@ -266,7 +267,7 @@ def _run_interval_block(pi0, eff_nr_block, lambda_block, alpha1_block, alpha2_bl
                          mu_vals_block, mu_removed_block,
                          w_pass, w_stage, w_pick, w_block_pax, w_block_taxi,
                          K_S, K_P, M, tau, interval_length,
-                         cost_per_vehicle_add, fuel_cost, time_to_city,
+                         cost_add_fuel, delay_ext_minutes, fuel_cost, time_to_city,
                          cost_pax_lost, device, dtype):
     """Run a block of consecutive intervals. Called inside checkpoint at block boundaries."""
     block_cost = torch.tensor(0.0, device=device, dtype=dtype)
@@ -278,6 +279,7 @@ def _run_interval_block(pi0, eff_nr_block, lambda_block, alpha1_block, alpha2_bl
         pax = lambda_block[j]
         a1, a2 = alpha1_block[j], alpha2_block[j]
         cost_taxi_lost = fuel_cost + time_to_city * a2
+        cost_add = cost_add_fuel + delay_ext_minutes * a2
         dt = interval_length
 
         Q, _, _ = build_Q_non_erlang_vec(
@@ -301,7 +303,7 @@ def _run_interval_block(pi0, eff_nr_block, lambda_block, alpha1_block, alpha2_bl
             )
 
         block_cost = block_cost + (a1 * A_pass + a2 * (A_taxi + A_resv)
-                                   + mu_vals_block[j] * dt * cost_per_vehicle_add
+                                   + mu_vals_block[j] * dt * cost_add
                                    + mu_removed_block[j] * dt * cost_taxi_lost
                                    + cost_pax_lost * pax * A_block_pax
                                    + cost_taxi_lost * cars * A_block_taxi)
@@ -505,6 +507,7 @@ def compute_total_objective_uniformization(
             cars = eff_nr[i]
             a1, a2 = alpha1[i], alpha2[i]
             cost_taxi_lost = config.fuel_cost + config.time_to_city * a2
+            cost_add = config.cost_add_fuel + config.delay_ext_minutes * a2
             dt = config.interval_length
 
             Q, _, _ = build_Q_non_erlang_vec(
@@ -528,7 +531,7 @@ def compute_total_objective_uniformization(
                 )
 
             obj = obj + (a1 * A_pass + a2 * (A_taxi + A_resv)
-                         + mu_vals[i] * dt * config.cost_per_vehicle_add
+                         + mu_vals[i] * dt * cost_add
                          + mu_removed[i] * dt * cost_taxi_lost
                          + config.cost_pax_lost * pax * A_block_pax
                          + cost_taxi_lost * cars * A_block_taxi)
@@ -554,7 +557,7 @@ def compute_total_objective_uniformization(
             mu_removed[start:end],
             w_pass, w_stage, w_pick, w_block_pax, w_block_taxi,
             K_S, K_P, M, config.tau, interval_length,
-            config.cost_per_vehicle_add, config.fuel_cost,
+            config.cost_add_fuel, config.delay_ext_minutes, config.fuel_cost,
             config.time_to_city, config.cost_pax_lost,
             device, dtype,
             use_reentrant=False
@@ -686,12 +689,13 @@ def run_steady_state_evaluation(
         total_taxiblock += A_block_taxi
 
         cost_taxi_lost = config.fuel_cost + config.time_to_city * a2
+        cost_add = config.cost_add_fuel + config.delay_ext_minutes * a2
         term_pax += a1 * A_pass
         term_taxi += a2 * A_taxi
         term_resv += a2 * A_resv
         term_pax_lost += config.cost_pax_lost * lam * A_block_pax
         term_taxi_lost += cost_taxi_lost * mu_nr * A_block_taxi
-        term_add_cost += mus_add_np[i] * config.interval_length * config.cost_per_vehicle_add
+        term_add_cost += mus_add_np[i] * config.interval_length * cost_add
         term_remove_cost += mus_removed_np[i] * config.interval_length * cost_taxi_lost
 
         pax_queue_ts.append(E_pass)

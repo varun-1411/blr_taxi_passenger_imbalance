@@ -878,6 +878,7 @@ def optimize_greedy(lambdas, mus_init, alpha1, alpha2, config,
                 torch.tensor(mu_add_committed, dtype=dtype, device=device),
                 torch.tensor(mu_remove_committed, dtype=dtype, device=device),
                 pad_mu0, pad_mus)
+            eff_nr_full = apply_carryover(eff_nr_full, carryover, pad_mu0, pad_mus)
 
             pi_current = propagate_pi(
                 pi_current, eff_nr_full[ell_start:ell_commit_end],
@@ -896,7 +897,7 @@ def optimize_greedy(lambdas, mus_init, alpha1, alpha2, config,
     total_obj, details, ts = evaluate_full_day(
         mu_add_committed, mu_remove_committed,
         lambdas, mus_init, alpha1, alpha2, config,
-        pi0=pi0, device=device, dtype=dtype)
+        pi0=pi0, carryover=carryover, device=device, dtype=dtype)
 
     return {
         'mu_add': mu_add_committed,
@@ -1034,6 +1035,7 @@ def optimize_mpc(lambdas, mus_init, alpha1, alpha2, config,
                 torch.tensor(mu_add_committed, dtype=dtype, device=device),
                 torch.tensor(mu_remove_committed, dtype=dtype, device=device),
                 pad_mu0, pad_mus)
+            eff_nr_full = apply_carryover(eff_nr_full, carryover, pad_mu0, pad_mus)
 
             pi_current = propagate_pi(
                 pi_current, eff_nr_full[ell_start:ell_commit_end],
@@ -1052,7 +1054,7 @@ def optimize_mpc(lambdas, mus_init, alpha1, alpha2, config,
     total_obj, details, ts = evaluate_full_day(
         mu_add_committed, mu_remove_committed,
         lambdas, mus_init, alpha1, alpha2, config,
-        pi0=pi0, device=device, dtype=dtype)
+        pi0=pi0, carryover=carryover, device=device, dtype=dtype)
 
     return {
         'mu_add': mu_add_committed,

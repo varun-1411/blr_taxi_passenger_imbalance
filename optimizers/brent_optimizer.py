@@ -35,8 +35,9 @@ def compute_objective(mu_val, lambda_pax, mu_0, alpha1, alpha2, cache, config, p
 
     dt = config.interval_length
     cost_taxi_lost = config.fuel_cost + config.time_to_city * alpha2
+    cost_add = config.cost_add_fuel + config.delay_ext_minutes * alpha2
     if mu_val > mu_0:
-        cost_adj = (mu_val - mu_0) * config.cost_per_vehicle_add
+        cost_adj = (mu_val - mu_0) * cost_add
     else:
         cost_adj = (mu_0 - mu_val) * cost_taxi_lost
 
